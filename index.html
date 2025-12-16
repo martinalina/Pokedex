@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
+  
+  <title>Pokedex</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/framework7/3.6.7/css/framework7.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/framework7-icons/2.3.0/css/framework7-icons.min.css">
+</head>
+
+<body>
+    <!-- App -->
+    <div id="app">  
+        <div class="statusbar"></div>
+
+        <!-- View -->
+            <!-- Left Panel -->
+            <div class="panel panel-left panel-cover panel-visible-by-breakpoint">
+                <div class="view view-left">
+                    <div class="page">
+                    <div class="navbar">
+                        <div class="navbar-inner">
+                        <div class="title">Menú</div>
+                        </div>
+                    </div>
+                    <div class="page-content">
+                        <div class="list accordion-list">
+                          <ul>
+                            <li class="accordion-item">
+                              <a href="#" class="item-content item-link">
+                                <div class="item-inner">
+                                  <div class="item-title">1. Generaciones</div>
+                                </div>
+                              </a>
+                              <div class="accordion-item-content">
+                                <div class="list" style="padding-left: 20px;">
+                                  <ul>
+                                    <li><a href="/generaciones/todas/" class="panel-close item-link item-content"><div class="item-inner"><div class="item-title">Todas</div></div></a></li>
+                                    <li><a href="/generaciones/kanto/" class="panel-close item-link item-content"><div class="item-inner"><div class="item-title">Kanto (Gen 1)</div></div></a></li>
+                                    <li><a href="/generaciones/johto/" class="panel-close item-link item-content"><div class="item-inner"><div class="item-title">Johto (Gen 2)</div></div></a></li>
+                                    <li><a href="/generaciones/hoenn/" class="panel-close item-link item-content"><div class="item-inner"><div class="item-title">Hoenn (Gen 3)</div></div></a></li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </li>
+                            <li>
+                              <a href="/tipos/" data-view=".view-main" class="panel-close item-link item-content">
+                                <div class="item-inner"><div class="item-title">2. Tipos</div></div>
+                              </a>
+                            </li>
+                            <li>
+                              <a href="/shiny/" data-view=".view-main" class="panel-close item-link item-content">
+                                <div class="item-inner"><div class="item-title">3. Shiny</div></div>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="view view-main">
+                <div class="page">
+                    <div class="navbar">
+                    <div class="navbar-inner">
+                        <div class="left">
+                        <a href="#" class="link panel-open" data-panel="left">
+                            <i class="icon f7-icons">bars</i>
+                        </a>
+                        </div>
+                        <div class="title">Bienvenida</div>
+                    </div>
+                    </div>
+                    <div class="page-content">
+                    <div class="block">
+                        <p>Selecciona un desafío del menú.</p>
+                    </div>
+                    </div>
+                </div>
+            </div>  
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/framework7/3.6.7/js/framework7.min.js"> </script>
+    <script>
+      var routes = [
+        {
+          path: '/generaciones/:region/',
+          content: `
+            <div class="page">
+              <div class="navbar">
+                <div class="navbar-inner">
+                  <div class="left">
+                    <a href="#" class="link panel-open" data-panel="left">
+                      <i class="icon f7-icons"> bars </i>
+                    </a>
+                  </div>
+                  <div class="title" id="page-title">Pokedex</div>
+                </div>
+              </div>
+
+              <div class="page-content">
+                <div class="searchbar-backdrop"></div>
+                  <div class="block text-align-center" id="loading-message">
+                    <div class="preloader"></div>
+                    <p>Capturando Pokémon...</p>
+                  </div>
+                  <div class="list virtual-list media-list searchbar-found">
+                  </div>
+              </div>
+            </div>
+          `, 
+          on: {
+            pageInit: function (e, page) { // "page" es el objeto que controla esta pantalla específica
+              var self = this;
+              var app = page.app; // accedemos a la app principal
+
+              var currentRegion = page.route.params.region; 
+              var regionData = {
+                'todas': { min: 1, max: 1025, title: 'Todas las Generaciones' },
+                'kanto': { min: 1, max: 151,  title: 'Región de Kanto' },
+                'johto': { min: 152, max: 251, title: 'Región de Johto' },
+                'hoenn': { min: 252, max: 386, title: 'Región de Hoenn' }
+              };
+
+              var config = regionData[currentRegion] || regionData['todas'];
+
+              // Actualizamos el título de la Navbar
+              page.$el.find('#page-title').text(config.title);
+
+              // Variables para la lista
+              var allItems = [];
+              var virtualList = null;
+
+              // Llamada a API para obtener la información de los Pokémon
+              app.request.json('https://pokeapi.co/api/v2/pokemon?limit=1025', function (data) {
+                
+                // Procesar datos: agregar ID, obtener imagen, crear lista limpia para virtual list
+                for (var i = 0; i < data.results.length; i++) {
+                  var pokemon = data.results[i];
+                  var id = i + 1;
+                  allItems.push({
+                    id: id,
+                    name: pokemon.name.toUpperCase(), // Nombre en mayúscula
+                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png',
+                    index: i
+                  });
+                }
+
+                // Crear lista virtual 
+                page.$el.find('#loading-message').hide(); // ocultar mensaje de carga
+
+                // filtrar elementos según la región seleccionada
+                var filteredItems = allItems.filter(function (item) {
+                    return item.id >= config.min && item.id <= config.max;
+                });
+
+                // Inicializar la lista virtual, ya filtrada
+                var virtualList = app.virtualList.create({
+                  el: page.$el.find('.virtual-list'), // dónde se "dibujará" la lista
+                  items: filteredItems,
+                  cache: false,
+                  height: 125, // altura de cada fila, para optimizar el scroll! :D
+                  // Plantilla HTML: Cómo se ve cada fila, palabras entre {{ }} se reemplazan con los datos del item
+                  itemTemplate:
+                    '<li style="background: transparent;">' +
+                      '<a href="#" class="item-link item-content" style="padding:0;">' +
+                        '<div class="item-inner" style="padding:0; margin:0;">' +
+                          // Card
+                          '<div class="card demo-card-header-pic" style="width: 100%; margin: 8px 10px;">' +
+                            '<div class="card-content card-content-padding" style="display:flex; align-items:center;">' +
+                              // Imagen
+                              '<div style="width: 100px; text-align: center;">' +
+                                '<img src="{{image}}" style="width: 80px; height: 80px; object-fit: contain;">' +
+                              '</div>' +
+                              // Texto
+                              '<div style="margin-left: 15px;">' +
+                                '<p style="color: #8e8e93; font-weight: bold; margin:0;">Nº {{id}}</p>' +
+                                '<h2 style="margin: 0; font-size: 22px; color: #333;">{{name}}</h2>' +
+                                '<span class="badge color-red">Ver detalles</span>' +
+                              '</div>' +
+                            '</div>' +
+                          '</div>' +
+                        '</div>' +
+                      '</a>' +
+                    '</li>'
+                });
+
+                // Vistas por región  (filtros)
+                page.$el.find('.tab-link').on('click', function () {
+                  var button = $(this);
+                  // Cambiar estilo visual botón activo
+                  page.$el.find('.tab-link-active').removeClass('tab-link-active');
+                  button.addClass('tab-link-active');
+                  // Obtenemos los rangos (data-min y data-max del HTML)
+                  var min = parseInt(button.attr('data-min'));
+                  var max = parseInt(button.attr('data-max'));
+                  // Filtrar allItems
+                  var filteredItems = allItems.filter(function (item) {
+                    return item.id >= min && item.id <= max;
+                  });
+                  virtualList.replaceAllItems(filteredItems);
+                  page.$el.find('.page-content').scrollTop(0, 300);
+                });
+              });
+            }
+          }
+        },
+        {
+          path: '/tipos/',
+          content: `
+            Página Tipos
+          `,
+        },
+        {
+          path: '/shiny/',
+          content: `
+            Página Shiny
+          `,
+        },
+      ];
+
+      var app = new Framework7({
+        root: '#app',
+        name: 'Pokedex',
+        id: 'com.martinalina.pokedex',
+        panel: {
+          swipe: 'left',
+          leftBreakpoint: 768,
+        },
+        routes: routes
+      });
+      var mainView = app.views.create('.view-main');
+        
+      console.log("¡Framework7 inicializado correctamente!");
+    </script>
+
+</body>
+</html>
