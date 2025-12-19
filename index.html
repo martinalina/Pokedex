@@ -9,6 +9,20 @@
   <!-- Estilos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/framework7/3.6.7/css/framework7.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/framework7-icons/2.3.0/css/framework7-icons.min.css">
+  <style>
+    /* Solo cuando la pantalla es ancha y el panel es visible */
+    @media (min-width: 768px) {
+      /* Ajusta la vista principal para que empiece donde termina el panel */
+      .view-main {
+        margin-left: 260px; /* Ancho por defecto del panel en F7 */
+        width: calc(100% - 260px);
+      }
+      /* Oculta el botón de "hamburguesa" ya que el menú está siempre abierto */
+      .view-main .navbar .left .panel-open {
+        display: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -134,34 +148,19 @@
               page.$el.find('#page-title').text(config.title);
 
               // Variables para la lista
-              var allItems = [];
               var virtualList = null;
 
-              // Llamada a API para obtener la información de los Pokémon
-              app.request.json('https://pokeapi.co/api/v2/pokemon?limit=1025', function (data) {
-                
-                // Procesar datos: agregar ID, obtener imagen, crear lista limpia para virtual list
-                for (var i = 0; i < data.results.length; i++) {
-                  var pokemon = data.results[i];
-                  var id = i + 1;
-                  allItems.push({
-                    id: id,
-                    name: pokemon.name.toUpperCase(), // Nombre en mayúscula
-                    image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png',
-                    index: i
-                  });
-                }
-
+              function inicializarLista() {
                 // Crear lista virtual 
                 page.$el.find('#loading-message').hide(); // ocultar mensaje de carga
 
                 // filtrar elementos según la región seleccionada
-                var filteredItems = allItems.filter(function (item) {
+                var filteredItems = PokeList.filter(function (item) {
                     return item.id >= config.min && item.id <= config.max;
                 });
 
                 // Inicializar la lista virtual, ya filtrada
-                var virtualList = app.virtualList.create({
+                virtualList = app.virtualList.create({
                   el: page.$el.find('.virtual-list'), // dónde se "dibujará" la lista
                   items: filteredItems,
                   cache: false,
@@ -201,13 +200,22 @@
                   var min = parseInt(button.attr('data-min'));
                   var max = parseInt(button.attr('data-max'));
                   // Filtrar allItems
-                  var filteredItems = allItems.filter(function (item) {
+                  var filteredItems = PokeList.filter(function (item) {
                     return item.id >= min && item.id <= max;
                   });
                   virtualList.replaceAllItems(filteredItems);
                   page.$el.find('.page-content').scrollTop(0, 300);
                 });
-              });
+              }
+
+              // Espera para saber si renderizamos de inmediato o esperamos al evento global
+              if (PokeList.length > 0) {
+                inicializarLista();
+              } else {
+                app.on('pokemonsCargados', function() {
+                  inicializarLista();
+                });
+              }
             }
           }
         },
@@ -236,6 +244,23 @@
         routes: routes
       });
       var mainView = app.views.create('.view-main');
+      
+      // Pedir datos (a nivel global)
+      var PokeList = [];
+      app.request.json('https://pokeapi.co/api/v2/pokemon?limit=1025', function (data) {
+        // Procesar datos: agregar ID, obtener imagen, crear lista limpia para virtual list
+        for (var i = 0; i < data.results.length; i++) {
+          var pokemon = data.results[i];
+          var id = i + 1;
+          PokeList.push({
+            id: id,
+            name: pokemon.name.toUpperCase(), // Nombre en mayúscula
+            image: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png',
+            index: i
+          });
+        }
+        app.emit('pokemonsCargados');
+      });
         
       console.log("¡Framework7 inicializado correctamente!");
     </script>
