@@ -10,14 +10,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/framework7/3.6.7/css/framework7.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/framework7-icons/2.3.0/css/framework7-icons.min.css">
   <style>
-    /* Solo cuando la pantalla es ancha y el panel es visible */
     @media (min-width: 768px) {
-      /* Ajusta la vista principal para que empiece donde termina el panel */
+      /* Ajusta la vista principal para empezar donde termina el panel y fijar menú izquierdo*/
       .view-main {
-        margin-left: 260px; /* Ancho por defecto del panel en F7 */
+        margin-left: 260px;
         width: calc(100% - 260px);
       }
-      /* Oculta el botón de "hamburguesa" ya que el menú está siempre abierto */
       .view-main .navbar .left .panel-open {
         display: none;
       }
